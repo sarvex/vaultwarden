@@ -11,7 +11,7 @@ import urllib.request
 from collections import OrderedDict
 
 if not (2 <= len(sys.argv) <= 3):
-    print("usage: %s <OUTPUT-FILE> [GIT-REF]" % sys.argv[0])
+    print(f"usage: {sys.argv[0]} <OUTPUT-FILE> [GIT-REF]")
     print()
     print("This script generates a global equivalent domains JSON file from")
     print("the upstream Bitwarden source repo.")
@@ -20,9 +20,9 @@ if not (2 <= len(sys.argv) <= 3):
 OUTPUT_FILE = sys.argv[1]
 GIT_REF = 'master' if len(sys.argv) == 2 else sys.argv[2]
 
-BASE_URL = 'https://github.com/bitwarden/server/raw/%s' % GIT_REF
-ENUMS_URL = '%s/src/Core/Enums/GlobalEquivalentDomainsType.cs' % BASE_URL
-DOMAIN_LISTS_URL = '%s/src/Core/Utilities/StaticStore.cs' % BASE_URL
+BASE_URL = f'https://github.com/bitwarden/server/raw/{GIT_REF}'
+ENUMS_URL = f'{BASE_URL}/src/Core/Enums/GlobalEquivalentDomainsType.cs'
+DOMAIN_LISTS_URL = f'{BASE_URL}/src/Core/Utilities/StaticStore.cs'
 
 # Enum lines look like:
 #
@@ -49,23 +49,21 @@ DOMAIN_LIST_RE = re.compile(
     r'}\);'
 )
 
-enums = dict()
+enums = {}
 domain_lists = OrderedDict()
 
 # Read in the enum names and values.
 with urllib.request.urlopen(ENUMS_URL) as response:
     for ln in response.read().decode('utf-8').split('\n'):
-        m = ENUM_RE.match(ln)
-        if m:
-            enums[m.group(1)] = int(m.group(2))
+        if m := ENUM_RE.match(ln):
+            enums[m[1]] = int(m[2])
 
 # Read in the domain lists.
 with urllib.request.urlopen(DOMAIN_LISTS_URL) as response:
     for ln in response.read().decode('utf-8').split('\n'):
-        m = DOMAIN_LIST_RE.match(ln)
-        if m:
+        if m := DOMAIN_LIST_RE.match(ln):
             # Strip double quotes and extraneous spaces in each domain.
-            domain_lists[m.group(1)] = [d.strip(' "') for d in m.group(2).split(",")]
+            domain_lists[m[1]] = [d.strip(' "') for d in m[2].split(",")]
 
 # Build the global domains data structure.
 global_domains = []
